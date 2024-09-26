@@ -9,8 +9,30 @@ import random
 from typing import Optional
 from main import QillBot
 import datetime
+import asyncio
+import traceback
 from .utils.timeutils import Timeconverter as Tc
 
+class Call:
+    def __init__(self, user1, channel1, user2, channel2):
+        self.user1 = user1
+        self.channel1 = channel1
+        self.user2 = user2
+        self.channel2 = channel2
+        self.active = True
+
+    async def transmit_message(self, message, sender):
+        if sender == self.user1:
+            await self.channel2.send(f"< {message}")
+        else:
+            await self.channel1.send(f"< {message}")
+
+    async def end_call(self):
+        self.active = False
+        await self.channel1.send("The call has ended.")
+        await self.channel2.send("The call has ended.")
+
+waitlist = []  
 
 class Misc(commands.Cog):
     """Uncategorized commands."""    
@@ -284,7 +306,65 @@ class Misc(commands.Cog):
             return pokemon_list
         else: 
             return ['bad query','use `,qpinfo` for query formatting']
+        
 
+    @commands.command(name='dial')
+    @commands.cooldown(1, 3, commands.BucketType.user)
+    async def dial(self, ctx: commands.Context):
+        try:
+            user_id = ctx.author.id
+            channel_id = ctx.channel.id
+
+            if any(user_id == uid for uid, _ in waitlist):
+                await ctx.send("WAIT!...")
+                return
+            
+            if waitlist:
+                userf = random.choice(waitlist)
+                waitlist.remove(userf)
+
+                user2_id, channel2_id = userf
+                
+                call = Call(ctx.author, ctx.channel, self.bot.get_user(user2_id), self.bot.get_channel(channel2_id))
+
+                await ctx.send(f"Connecting...")
+                await asyncio.sleep(1)
+                await self.handle_call(call)
+            else:
+                waitlist.append((user_id, channel_id))
+                await ctx.send("There is no one active. You have been added to the waitlist. Waiting for a call...")
+
+                try:
+                    await asyncio.wait_for(asyncio.sleep(60), timeout=60) 
+                except asyncio.TimeoutError:
+                    pass
+
+                if any(user_id == uid for uid, _ in waitlist):
+                    waitlist.remove((user_id, channel_id))
+                    await ctx.send("You have been removed from the waitlist due to inactivity.")
+        except Exception as e:
+            print(e)
+            traceback.print_exc()
+
+
+    async def handle_call(self, call: Call):
+        await call.channel1.send("Call started!\nType 'end' to terminate the call.")
+        await call.channel2.send("Call started!\nType 'end' to terminate the call.")
+
+        try:
+            while call.active:
+                def check(m):
+                    return m.channel in [call.channel1, call.channel2] and m.author in [call.user1, call.user2]
+
+                message = await self.bot.wait_for('message', timeout=60.0, check=check)
+
+                if message.content.lower() == "end":
+                    await call.end_call()
+                    return
+
+                await call.transmit_message(message.content, message.author)
+        except asyncio.TimeoutError:
+            await call.end_call()
 
 async def setup(bot: QillBot) -> None:
     await bot.add_cog(Misc(bot))
