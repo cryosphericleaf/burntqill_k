@@ -1,21 +1,13 @@
 
-import asyncio
-import datetime
 import discord 
 from discord.ext import commands
-from discord import app_commands
-from discord.ext.commands import Context, BadArgument
-
-
 from main import QillBot
-from .utils.timeutils import Timeconverter as Tc
 
 
 class Tbuttons(discord.ui.View):
     def __init__(self):
         super().__init__()
     ...
-
 
 class Time(commands.Cog):
     "Time related commands."

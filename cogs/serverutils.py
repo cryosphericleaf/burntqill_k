@@ -14,17 +14,10 @@ from typing import List
 from discord import app_commands
 from typing import Optional
 from discord.errors import Forbidden
-from asyncpg import UniqueViolationError
-from .utils.testpages import PageView
-
-
-
+from .utilities.testpages import PageView
 
 from main import QillBot
 from config import GOOGLE_KEY as GconsoleKey
-
-
-    
 
 class ServerUtils(commands.Cog):
     """Server utility commands"""
@@ -33,8 +26,6 @@ class ServerUtils(commands.Cog):
         self.bot: QillBot = bot
         self.collection = self.bot.db['triggers']
        
-    
-
     #TOSSIC
     async def add_monitoring_ch(self, guild_id, channel_id, log_channel_id):
         query = """
@@ -249,9 +240,6 @@ class ServerUtils(commands.Cog):
 
         await ctx.send(f'Unlocked :>')
 
-
-
-
     @commands.hybrid_group(name="emoji", description="Manage emojies", help = 'Manage emojies')
     @commands.has_permissions(manage_emojis=True)
     @commands.cooldown(1, 2, commands.BucketType.user)
@@ -288,7 +276,6 @@ class ServerUtils(commands.Cog):
             await ctx.send(str(e))
             print(e)
 
-    
     @emoji.command(name = 'remove', description="Remove an emoji from the server", help = "Remove an emoji from the server")
     @app_commands.describe(name="The name of the emoji", emoji="The emoji to remove")
     async def emoji_remove(self, ctx: Context, emoji: Optional[str] = None, name: Optional[str] = None):
@@ -329,9 +316,6 @@ class ServerUtils(commands.Cog):
                         await ctx.send(content=f"[svg link]({emoji_info['asset']})")
                         return
             await ctx.send("Emoji not found.")
-
-
-
 
     #logging
             

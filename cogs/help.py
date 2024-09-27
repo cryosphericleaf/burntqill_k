@@ -7,7 +7,7 @@ from discord.ext.commands import Context
 import itertools
 from typing import Optional, List, TYPE_CHECKING, Any, Union
 from discord.ext import commands, menus
-from .utils.pages import RoboPages, ButtonPaginator
+from .utilities.pages import RoboPages, ButtonPaginator
 import discord
 from datetime import datetime 
 import inspect

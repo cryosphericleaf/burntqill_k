@@ -2,9 +2,9 @@ import discord
 import json 
 from discord.ext import commands
 from main import QillBot
-from .utils.dtypes import Move, Monster, Type
-from .utils.player import Player
-from .utils.field import Field
+from .duelsys.dtypes import Move, Monster, Type
+from .duelsys.player import Player
+from .duelsys.field import Field
 import traceback
 
 nature_effects = {

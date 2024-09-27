@@ -32,7 +32,7 @@ class QillBot(commands.AutoShardedBot):
 
         extensions = [
             'cogs.basic',
-            'cogs.jiken',
+            'cogs.jik',
             'cogs.images',
             'cogs.jisho',
             'cogs.autoresponder',

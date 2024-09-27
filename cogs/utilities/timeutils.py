@@ -3,10 +3,10 @@ from typing import Dict
 import re
 import datetime
 
-from typing import Any, Iterable, Optional, Sequence
+from typing import Optional
 
 class Timeconverter:
-
+    @staticmethod
     def parse_time(input_time: str) -> int:
         time_units: Dict[str, str] = {
             'years': r'(\d+)\s*(?:year|yr|yrs|y)',

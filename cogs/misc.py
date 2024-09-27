@@ -11,28 +11,8 @@ from main import QillBot
 import datetime
 import asyncio
 import traceback
-from .utils.timeutils import Timeconverter as Tc
-
-class Call:
-    def __init__(self, user1, channel1, user2, channel2):
-        self.user1 = user1
-        self.channel1 = channel1
-        self.user2 = user2
-        self.channel2 = channel2
-        self.active = True
-
-    async def transmit_message(self, message, sender):
-        if sender == self.user1:
-            await self.channel2.send(f"< {message}")
-        else:
-            await self.channel1.send(f"< {message}")
-
-    async def end_call(self):
-        self.active = False
-        await self.channel1.send("The call has ended.")
-        await self.channel2.send("The call has ended.")
-
-waitlist = []  
+from .utilities.timeutils import Timeconverter as Tc
+from .utilities.rbs import waitlist, Call
 
 class Misc(commands.Cog):
     """Uncategorized commands."""    
@@ -332,7 +312,7 @@ class Misc(commands.Cog):
                 await self.handle_call(call)
             else:
                 waitlist.append((user_id, channel_id))
-                await ctx.send("There is no one active. You have been added to the waitlist. Waiting for a call...")
+                await ctx.send("Waiting for a call...")
 
                 try:
                     await asyncio.wait_for(asyncio.sleep(60), timeout=60) 

@@ -1,11 +1,10 @@
 from discord.ext import commands
 import discord
 from typing import Any, Optional, Literal
-from .utils.testpages import PageView
 from main import QillBot
 
 
-class Jiken(commands.Cog):
+class Jik(commands.Cog):
     def __init__(self, bot: QillBot) -> None:
         self.bot: QillBot = bot
         self.tree = bot.tree  
@@ -35,8 +34,6 @@ class Jiken(commands.Cog):
             print(e)
 
 
-
-
     @commands.command(name='reload')
     async def reload(self, ctx: commands.Context, cog: str) -> None:
         if ctx.author.id not in self.allowed_users:
@@ -63,22 +60,15 @@ class Jiken(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild: discord.Guild):
-        
         server_id = guild.id
-
- 
         existing_server = await self.collection.find_one({"_id": server_id})
         if existing_server is None:
            
             await self.collection.insert_one({"_id": server_id})
-            
-
+        
     @commands.Cog.listener()
     async def on_guild_remove(self, guild: discord.Guild):
-       
         server_id = guild.id
-
-        
         existing_server = await self.collection.find_one({"_id": server_id})
         if existing_server is not None:
          
@@ -86,4 +76,4 @@ class Jiken(commands.Cog):
             await self.betr.insert_one({"_id": server_id})
 
 async def setup(bot: QillBot) -> None:
-    await bot.add_cog(Jiken(bot))
+    await bot.add_cog(Jik(bot))

@@ -5,7 +5,7 @@ from discord.ext import commands
 import aiohttp
 import urllib
 from typing import List
-from .utils.testpages import PageView
+from .utilities.testpages import PageView
 
 class Search(commands.Cog):
     """Search based commands."""
