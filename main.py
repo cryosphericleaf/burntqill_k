@@ -56,7 +56,7 @@ class QillBot(commands.AutoShardedBot):
         if isinstance(error, commands.NoPrivateMessage):
             await ctx.author.send('This command cannot be used in private messages.')
         elif isinstance(error, commands.MissingPermissions):
-            await ctx.send(f"You don't have the permission to use this command.")
+            await ctx.send(f"you are missing permissions.")
         elif isinstance(error, commands.CommandOnCooldown):
             await ctx.send(f"This command is on cooldown. :)")
         elif isinstance(error, commands.DisabledCommand):

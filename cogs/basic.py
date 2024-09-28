@@ -104,8 +104,6 @@ class Basic(commands.Cog):
         embed.add_field(name=f"Roles ({len(roles)})", value=", ".join([role.name for role in roles]), inline=False)
         embed.add_field(name="Top role", value=member.top_role.name, inline=False)
       
-
-
         await ctx.send(embed=embed)
 
     @commands.hybrid_command(name="avatar", aliases=["av"], description="Displays the user avatar.", help="Displays the user avatar.")
@@ -134,6 +132,26 @@ class Basic(commands.Cog):
         else:
             await ctx.send("This user doesn't have an banner.")
 
+    @commands.hybrid_command(name='nick')
+    @commands.has_permissions(manage_nicknames=True)
+    async def nick(self, ctx, member: discord.Member, *, new_nick: str):
+        """Change the nickname of a member."""
+        try:
+            await member.edit(nick=new_nick)
+            await ctx.send(f"Changed server nick to **{new_nick}** of {member.mention}.")
+        except discord.Forbidden:
+            await ctx.send("I do not have permission to change that user's nickname.")
+        except Exception as e:
+            await ctx.send(f"An error occurred: {str(e)}")
+
+    @nick.error
+    async def nickname_error(self, ctx, error):
+        if isinstance(error, commands.MissingRequiredArgument):
+            await ctx.send("Please provide a member and a new nickname.")
+        elif isinstance(error, commands.BadArgument):
+            await ctx.send("Invalid member specified. Please mention a valid user.")
+        else:
+            await ctx.send(f"error: {str(error)}")
 
     @commands.hybrid_command(name="purge", description="Purge messages", help="Purge messages")
     @commands.has_permissions(manage_messages=True)
@@ -159,13 +177,9 @@ class Basic(commands.Cog):
                 if links and "http" not in message.content:
                     return False
                 return True
-        try:
-            deleted = await ctx.channel.purge(limit = limit + 1, check=check)
-            await ctx.send(f'Deleted {len(deleted) - 1} message(s)', delete_after=3)
-        except commands.MissingPermissions as e:
-            raise e
-
-    
+  
+        deleted = await ctx.channel.purge(limit = limit + 1, check=check)
+        await ctx.send(f'Deleted {len(deleted) - 1} message(s)', delete_after=3)
 
     async def add_afk(self, user_id, guild_id, content=None):
         query = "SELECT * FROM afk WHERE user_id = ? AND guild_id = ?"
@@ -199,15 +213,15 @@ class Basic(commands.Cog):
     @afk.command(name='set', description='Set or remove AFK status', help='Set or remove AFK status')
     @app_commands.describe(content="The reason for being AFK")
     async def afk_(self, ctx: Context, *, content: str = None):
-        user_id = ctx.author.id
-        guild_id = ctx.guild.id
-
+        try:
+            await ctx.author.edit(nick="「AFK」" + ctx.author.display_name)
+        except Exception:
+            pass
         if content:
             await ctx.send(f'{ctx.author.mention}, you are now AFK with the reason: {content}')
         else:
             await ctx.send(f'{ctx.author.mention}, you are now AFK.')
-
-        await self.add_afk(user_id, guild_id, content)
+        await self.add_afk(ctx.author.id, ctx.guild.id, content)
     
     @afk.command(name='remove', description='Remove AFK status', help='Remove AFK status')
     @commands.has_permissions(moderate_members=True)
@@ -240,9 +254,9 @@ class Basic(commands.Cog):
                     if afk_c:
                         reason = afk_c[2] if afk_c else None  
                         if reason:
-                            await message.channel.send(f'{mentioned_user.display_name} is currently AFK. \n{reason}')
+                            await message.channel.send(f'{mentioned_user.display_name[5:]} is currently AFK. \n{reason}')
                         else:
-                            await message.channel.send(f'{mentioned_user.display_name} is currently AFK.')
+                            await message.channel.send(f'{mentioned_user.display_name[5:]} is currently AFK.')
 
 async def setup(bot: QillBot):
     await bot.add_cog(Basic(bot))
