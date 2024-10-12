@@ -41,7 +41,8 @@ class QillBot(commands.AutoShardedBot):
             'cogs.serverutils',
             'cogs.maths',
             'cogs.triggerlistner',
-            'cogs.doubles'
+            'cogs.doubles',
+            'cogs.pokemonduel.commands'
         ]
 
         for extension in extensions:
