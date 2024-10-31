@@ -244,6 +244,11 @@ class Basic(commands.Cog):
 
             if afk_author:
                 await self.remove_afk(message.author.id, message.guild.id)
+                try:
+                    if message.author.nick.startswith("「AFK」"):
+                        await message.author.edit(nick=message.author.nick[5:])
+                except Exception:
+                    pass
                 await message.channel.send("Back? Okay, I've removed your AFK status.")
                 
             if message.mentions:
