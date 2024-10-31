@@ -56,25 +56,5 @@ class Search(commands.Cog):
             view = PageView(ctx, embeds)
             await view.start()
 
-    @commands.hybrid_command(name='jmd', help="Looks up a term in JMdict")
-    @app_commands.describe(term="The term to search for.")
-    async def jmd(self, ctx: commands.Context, *, term: str) -> None:
-        results = [entry for entry in self.bot.jmdict.values() if term in entry['readings'] or term in [k for k in entry.keys() if k != 'senses']]
-        if results:
-            embed = discord.Embed(title=f"**{term}**", color=0xffebf8)
-
-            for result in results:
-                readings = ', '.join(result['readings'])
-                embed.add_field(name="Readings", value=readings if readings else "None", inline=False)
-                for sense in result['senses']:
-                    pos = ', '.join(sense['pos']) or "Unknown"
-                    glosses = '\n'.join(f"- {gloss}" for gloss in sense['glosses']) or "No glosses available"
-                    embed.add_field(name=f"{pos}", value=glosses, inline=False)
-            await ctx.send(embed=embed)
-        else:
-            await ctx.send("found nothing.")
-
-
-
 async def setup(bot: commands.Bot) -> None:
     await bot.add_cog(Search(bot))

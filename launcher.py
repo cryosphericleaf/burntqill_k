@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-import xml.etree.ElementTree as ET
 import logging
 import asyncio
 import contextlib
 import asqlite
 import discord
-from config import JMdict_e
 from main import QillBot
 
 from logging.handlers import RotatingFileHandler
@@ -49,36 +47,6 @@ def setup_logging():
             hdlr.close()
             log.removeHandler(hdlr)
 
-def parse_jmdict(xml_file):
-    tree = ET.parse(xml_file)
-    root = tree.getroot()
-    dictionary = {}
-
-    for entry in root.findall('entry'):
-        kanji_entries = entry.findall('k_ele/keb')
-        readings = entry.findall('r_ele/reb')
-        senses = entry.findall('sense')
-
-        for kanji in kanji_entries:
-            kanji_text = kanji.text
-            if kanji_text:  
-                if kanji_text not in dictionary:
-                    dictionary[kanji_text] = {
-                        'readings': [],
-                        'senses': []
-                    }
-                for reading in readings:
-                    if reading.text:
-                        dictionary[kanji_text]['readings'].append(reading.text)
-                for sense in senses:
-                    sense_info = {
-                        'pos': [pos.text for pos in sense.findall('pos')],
-                        'glosses': [gloss.text for gloss in sense.findall('gloss') if gloss.text]
-                    }
-                    dictionary[kanji_text]['senses'].append(sense_info)
-    return dictionary
-
-
 async def run_bot():
     try:
         conn = await asqlite.connect('qill.db')
@@ -91,10 +59,7 @@ async def run_bot():
             await cursor.execute(query)
             await conn.commit()
         await cursor.close()
-        jmdict = parse_jmdict(JMdict_e)
-        print("loaded jmdict")
         async with QillBot() as bot:
-            bot.jmdict = jmdict
             bot.conn = conn
             await bot.start()
     except Exception as e:
