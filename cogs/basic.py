@@ -259,7 +259,8 @@ class Basic(commands.Cog):
                     if afk_c:
                         reason = afk_c[2] if afk_c else None  
                         if reason:
-                            await message.channel.send(f'{mentioned_user.display_name[5:]} is currently AFK. \n{reason}')
+                            name = mentioned_user.display_name if mentioned_user.display_name[:5] != "「AFK」" else mentioned_user.display_name[5:]
+                            await message.channel.send(f'{name} is currently AFK. \n{reason}')
                         else:
                             await message.channel.send(f'{mentioned_user.display_name[5:]} is currently AFK.')
 
