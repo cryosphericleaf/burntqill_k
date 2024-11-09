@@ -1,4 +1,5 @@
 import discord
+from discord.ext import commands
 import asyncio
 from .move import Move
 
@@ -151,7 +152,7 @@ class BattlePromptView(discord.ui.View):
         self.battle.trainer2.event.set()
     
     async def on_error(self, interaction, error, item):
-        self.battle.ctx.cog.log.error("Exception in a button.", exc_info=error)
+        print(error)
     
     def stop(self):
         """Override to stop child views when this view is stopped."""
