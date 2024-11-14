@@ -1,14 +1,12 @@
+from PIL import Image, ImageDraw, ImageFont
 import io
 import discord
-from PIL import Image, ImageDraw, ImageFont
 from discord.ext import commands
 from discord import app_commands
 from typing import Optional
 import aiohttp
 from io import BytesIO
 import textwrap
-
-
 
 class Images(commands.Cog):
     """Image related commands."""
@@ -24,7 +22,6 @@ class Images(commands.Cog):
                 else:
                     raise Exception("Failed to fetch user avatar.")
                 
-
     @app_commands.command(name='caption', description='Add a caption to an image')
     @app_commands.describe(caption_text='The caption text', attachment='The image attachment', link='The image link')
     async def add_caption(self, interaction: discord.Interaction, caption_text: str, attachment: Optional[discord.Attachment] = None, link: Optional[str] = None):
@@ -51,13 +48,9 @@ class Images(commands.Cog):
         else:
             await interaction.response.send_message("Please attach an image or provide a link :>")
             return
-    
 
         max_width = 800
-
- 
         img = Image.open(io.BytesIO(img_bytes))
-
 
         if img.width > max_width:
             ratio = max_width / float(img.width)
@@ -73,15 +66,14 @@ class Images(commands.Cog):
 
         total_text_height = 0
         for line in lines:
-            while font.getsize(line)[0] > max_width:
+            while font.getbbox(line)[2] - font.getbbox(line)[0] > max_width:
                 font_size -= 1
                 font = ImageFont.truetype(fpth, font_size)
 
-            _, text_height = font.getsize(line)
+            _, text_height = font.getbbox(line)[2], font.getbbox(line)[3]
             total_text_height += text_height
 
-        # Set the height of the caption image dynamically based on the total text height with padding
-        caption_padding = 20  
+        caption_padding = 20
         caption_height = total_text_height + 2 * caption_padding
         new_height = img.height + caption_height
 
@@ -93,11 +85,11 @@ class Images(commands.Cog):
 
         current_height = caption_padding
         for line in lines:
-            while font.getsize(line)[0] > max_width:
+            while font.getbbox(line)[2] - font.getbbox(line)[0] > max_width:
                 font_size -= 1
                 font = ImageFont.truetype(fpth, font_size)
 
-            text_width, text_height = font.getsize(line)
+            text_width, text_height = font.getbbox(line)[2], font.getbbox(line)[3]
             text_position = ((caption_img.width - text_width) // 2, current_height)
             caption_draw.text(text_position, line, fill='black', font=font)
             current_height += text_height
@@ -106,19 +98,15 @@ class Images(commands.Cog):
 
         new_img.paste(caption_img, (0, 0))
 
-
         if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
-            # The image has an alpha channel, can use it as mask
             new_img.paste(img, (0, caption_height), mask=img.split()[3])
         else:
-            
             new_img.paste(img, (0, caption_height))
 
         output_image = io.BytesIO()
         new_img.save(output_image, format='png')
         output_image.seek(0)
         await interaction.followup.send(file=discord.File(output_image, f'meme.{original_extension}'))
-
 
 
     @commands.command(name="quote", description="Generate a quote image", help="Generate a quote.")
