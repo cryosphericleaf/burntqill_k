@@ -6,3 +6,4 @@ config.py
 *.db-shm
 *.db-wal
 test.py
+venv
