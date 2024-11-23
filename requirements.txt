@@ -2,7 +2,6 @@ discord
 git+https://github.com/Rapptz/discord-ext-menus@fbb8803779373357e274e1540b368365fd9d8074
 motor 
 asyncio
-qrcode
 asqlite
 pillow
 sympy

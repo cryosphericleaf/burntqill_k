@@ -6,6 +6,7 @@ import contextlib
 import asqlite
 import discord
 from main import QillBot
+import subprocess
 
 from logging.handlers import RotatingFileHandler
 
@@ -68,7 +69,11 @@ async def run_bot():
 
 def main():
     with setup_logging():
-        asyncio.run(run_bot())
+        try:
+            asyncio.run(run_bot())
+        except KeyboardInterrupt:
+            print(subprocess.run(['make', 'stopfe'], capture_output=True, text=True).stdout)
+            print("解散")
 
 
 

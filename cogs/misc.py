@@ -3,7 +3,6 @@ from discord.ext import commands
 from discord import app_commands
 import json
 import inspect
-import qrcode
 from io import BytesIO
 import random
 from typing import Optional
@@ -71,43 +70,6 @@ class Misc(commands.Cog):
         except Exception as e:
             print("Error:", e)
             await ctx.send(f"An error occurred while processing the command.\n ```py {e}```")
-
-    @commands.hybrid_command(
-        description='Generate a QR code!',
-        help='Generate a QR code with the provided text or link and send it as an image.'
-    )
-    @app_commands.describe(content='The text or link to generate a QR code from.')
-    async def qrcode(self, ctx: commands.Context, *, content: str) -> None:
-        await ctx.defer()
-        if not content:
-            await ctx.send("Please provide some text or a link to generate a QR code.")
-            return
-
-        try:
-            qr = qrcode.QRCode(
-                version=1,
-                error_correction=qrcode.constants.ERROR_CORRECT_L,
-                box_size=10,
-                border=4,
-            )
-            qr.add_data(content)
-            try:
-                qr.make(fit=True)
-            except qrcode.exceptions.DataOverflowError:
-                await ctx.send("The data provided is too large to fit in a single QR code. Please provide less data.")
-                return
-
-            qr_image = qr.make_image(fill_color="black", back_color="white")
-
-            buffer = BytesIO()
-            qr_image.save(buffer, format="PNG", quality=95)
-            buffer.seek(0)
-
-            await ctx.send(file=discord.File(buffer, filename="qrcode.png"))
-
-        except Exception as e:
-            await ctx.send(f"An error occurred while generating the QR code: {str(e)}")
-
 
     @commands.hybrid_command(description="Randomly selects one of the given options.",help='Randomly selects one of the given options.\n Separate the items with commas `,`')
     @app_commands.describe(options="The options to choose from.")
@@ -183,21 +145,6 @@ class Misc(commands.Cog):
         except Exception as e:
             print(e)
         print("e")
-
-
-    @commands.hybrid_command(name='noticeme', help='...')
-    @commands.cooldown(1, 2, commands.BucketType.user)
-    async def notice_me_senpai(self, ctx: commands.Context):
-
-        gifs = [
-            'https://i.alexflipnote.dev/500ce4.gif', 
-            'https://tenor.com/view/senpai-notice-bite-sip-clingy-gif-5740206' 
-        ]
-   
-        gif = random.choices(gifs, weights=[99, 1])[0]
-        await ctx.send(gif)
-
-
 
     @commands.hybrid_command(name="sleep", description="Timeout self(command invoker) for the given time.", help="Timeout self(command invoker) for the given time")
     @commands.cooldown(1, 3, commands.BucketType.user)

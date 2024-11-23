@@ -1,15 +1,12 @@
-.PHONY: all run-fe run-launcher
+.PHONY: all run-fe run-launcher stopfe
 
 all: run-fe run-launcher
 
 run-fe:
-	@echo "running field image gen server..."
-	gnome-terminal -- bash -c "cd cogs/pokemonduel && ./FE; exec bash"
-
+	cd cogs/pokemonduel && nohup ./FE > fe.log 2>&1 &
 
 run-launcher:
-	@echo "running bot..."
-	gnome-terminal -- bash -c "python3 launcher.py; exec bash"
+	python3 launcher.py
 
-
-
+stopfe:
+	pkill FE 
