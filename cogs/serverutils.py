@@ -308,13 +308,6 @@ class ServerUtils(commands.Cog):
                     await ctx.send(e.url)
                     return
         else:
-            with open('discord_emoji.json', 'r') as f:
-                emoji_map = json.load(f)
-                for emoji_info in emoji_map:
-                    if emoji in emoji_info['strings']:
-            
-                        await ctx.send(content=f"[svg link]({emoji_info['asset']})")
-                        return
             await ctx.send("Emoji not found.")
 
     #logging
