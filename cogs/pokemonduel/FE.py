@@ -1,6 +1,6 @@
-
 from PIL import Image, ImageDraw, ImageFont
 import io
+
 
 class Monster:
     def __init__(self, name, max_hp, current_hp):
@@ -22,12 +22,13 @@ class Player:
 
 
 class Field:
-    def __init__(self, player1, player2, weather):
-        if weather not in {"sun", "h-sun", "rain", "h-rain", "hail", "sandstorm", "", None}:
+    def __init__(self, player1, player2, weather, terrain):
+        if weather not in {"sun", "h-sun", "rain", "h-rain", "hail", "sandstorm", ""}:
             raise ValueError("Invalid weather condition.")
         self.player1 = player1
         self.player2 = player2
         self.weather = weather
+        self.terrain = terrain
 
 
 def get_sprite_bytes(mon):
@@ -166,7 +167,7 @@ def get_weather_image(weather):
         "h-rain": "cogs/pokemonduel/misc/weather-raindance.png",
         "hail": "cogs/pokemonduel/misc/weather-hail.png",
         "sandstorm": "cogs/pokemonduel/misc/weather-sandstorm.png",
-        "h-wind": "cogs/pokemonduel/misc/weather-strongwind.png"
+        "h-wind": "cogs/pokemonduel/misc/weather-strongwind.png",
     }
     try:
         if weather in weather_map:
@@ -175,15 +176,40 @@ def get_weather_image(weather):
         print(f"Weather image {weather_map[weather]} not found.")
     return None
 
+
+def get_terrain_image(terrain):
+    terrain_map = {
+        "grassy": "cogs/pokemonduel/misc/weather-grassyterrain.png",
+        "electric": "cogs/pokemonduel/misc/weather-electricterrain.png",
+        "psychic": "cogs/pokemonduel/misc/weather-psychicterrain.png",
+        "misty": "cogs/pokemonduel/misc/weather-mistyterrain.png",
+    }
+    try:
+        if terrain in terrain_map:
+            return Image.open(terrain_map[terrain]).convert("RGBA")
+    except FileNotFoundError:
+        print(f"Weather image {terrain_map[terrain]} not found.")
+    return None
+
+
 def format_pokemon_name(name):
     return name.lower().replace("_", "-").replace(" ", "-")
+
 
 def generate_field_image(battle):
     try:
         mon1 = battle.trainer1.current_pokemon
         mon2 = battle.trainer2.current_pokemon
-        p1am = [format_pokemon_name(mon._name) for mon in battle.trainer1.party if mon.hp > 0]
-        p2am = [format_pokemon_name(mon._name) for mon in battle.trainer2.party if mon.hp > 0]
+        p1am = [
+            format_pokemon_name(mon._name)
+            for mon in battle.trainer1.party
+            if mon.hp > 0
+        ]
+        p2am = [
+            format_pokemon_name(mon._name)
+            for mon in battle.trainer2.party
+            if mon.hp > 0
+        ]
 
         player1 = Player(
             Monster(
@@ -203,13 +229,39 @@ def generate_field_image(battle):
             p2am,
         )
 
-        field = Field(player1, player2, battle.weather._weather_type)
+        field = Field(
+            player1, player2, battle.weather._weather_type, battle.terrain.item
+        )
 
-        battlefield = Image.open(f"cogs/pokemonduel/misc/{battle.bg}.png").convert("RGBA")
+        extratext = ""
+        battlefield = Image.open(f"cogs/pokemonduel/misc/{battle.bg}.png").convert(
+            "RGBA"
+        )
+        draw_obj = ImageDraw.Draw(battlefield)
+
+        if field.terrain:
+            timg = get_terrain_image(field.terrain)
+            battlefield = timg
+            draw_obj = ImageDraw.Draw(battlefield)
+            extratext += f"- {field.terrain} terrain\n"
         if field.weather != "":
             wimg = get_weather_image(field.weather)
             battlefield = wimg
-        draw_obj = ImageDraw.Draw(battlefield)
+            draw_obj = ImageDraw.Draw(battlefield)
+            extratext += f"- {field.weather} weather\n"
+
+        if battle.trick_room.active():
+            extratext += f"- trick room\n"
+        if battle.magic_room.active():
+            extratext += f"- magic room\n"
+        if battle.wonder_room.active():
+            extratext += f"- wonder room\n"
+        if battle.gravity.active():
+            extratext += f"- gravity\n"
+
+        font = ImageFont.truetype("cogs/pokemonduel/misc/poppinsb.ttf", 16)
+        if extratext != "":
+            draw_obj.text((10, 5), extratext, font=font, fill=(0, 0, 0))
 
         draw_monster(battlefield, field.player1.current_monster, (90, 250), "b", 250)
         draw_monster(battlefield, field.player2.current_monster, (420, 100), "f", 240)
@@ -225,5 +277,5 @@ def generate_field_image(battle):
         img_buffer.seek(0)
 
         return img_buffer
-    except Exception:
-        pass
+    except Exception as e:
+        print(e)
