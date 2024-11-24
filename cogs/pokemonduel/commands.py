@@ -8,6 +8,8 @@ from .pokemon import DuelPokemon
 from .data import generate_team_preview, find, find_one
 from .trainer import MemberTrainer
 from main import QillBot
+import random
+
 
 
 class TeambuilderReadException(Exception):

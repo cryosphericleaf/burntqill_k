@@ -158,7 +158,7 @@ class Images(commands.Cog):
 
         # Add the quote text
         font = ImageFont.truetype(font_path, font_size)
-        total_text_height = sum(draw.textbbox((0, 0), line, font=font)[3] - draw.textbbox((0, 0), line, font=font)[1] for line in wrapped_quote_lines)
+        total_text_height = sum([font.getbbox(line)[3] - font.getbbox(line)[1] for line in wrapped_quote_lines])
         y_start = y_quote - total_text_height / 2
         for line in wrapped_quote_lines:
             text_bbox = draw.textbbox((0, 0), line, font=font)
@@ -166,7 +166,7 @@ class Images(commands.Cog):
             text_height = text_bbox[3] - text_bbox[1]
             x_quote = x_quote_center - text_width / 2
             draw.text((x_quote, y_start), line, fill="white", font=font)
-            y_start += text_height
+            y_start += text_height + 10
 
          # Calculate position for the name
         name_font = ImageFont.truetype(font_path, font_size - 16)  

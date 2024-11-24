@@ -7,6 +7,7 @@ from discord.ext import commands
 from pathlib import Path
 import json
 from .buttons import BattlePromptView, PreviewPromptView
+from .FE import generate_field_image
 
 def bundled_data_path(cog_instance: commands.Cog) -> Path:
     """
@@ -112,11 +113,11 @@ async def generate_main_battle_message(battle):
     )
     e.set_footer(text="Who Wins!?")
     try: #aiohttp 3.7 introduced a bug in dpy which causes this to error when rate limited. This catch just lets the bot continue when that happens.
-        img_data = await generate_field_picture(battle)
+        img_data = generate_field_image(battle)
         battle_view = BattlePromptView(battle)
         if img_data:
             e = discord.Embed(title=f"Battle between {battle.trainer1.name} and {battle.trainer2.name}")
-            file = discord.File(io.BytesIO(img_data), filename='field.png')
+            file = discord.File(img_data, filename='field.png')
             e.set_image(url=f"attachment://{file.filename}")
             await battle.channel.send(embed=e, file=file,  view=battle_view)
         else:
@@ -150,46 +151,3 @@ async def generate_text_battle_message(battle):
     for page in pages:
         await battle.channel.send(embed=page)
     battle.msg = ""
-
-
-async def generate_field_picture(battle):
-    try:
-        mon1 = battle.trainer1.current_pokemon
-        mon2 = battle.trainer2.current_pokemon
-        p1am = []
-        for mon in battle.trainer1.party:
-            if mon.hp > 0:
-                p1am.append(mon._name.lower())
-        p2am = []
-        for mon in battle.trainer2.party:
-            if mon.hp > 0:
-                p2am.append(mon._name.lower())
-        payload = {
-            "player1": {
-                "alive_mons": p1am,
-                "mon": {
-                    "name": mon1._name,
-                    "max_hp": int(mon1.starting_hp),
-                    "current_hp": int(mon1.hp)
-                }
-            },
-            "player2": {
-                "alive_mons": p2am,
-                "mon": {
-                    "name": mon2._name,
-                    "max_hp": int(mon2.starting_hp),
-                    "current_hp": int(mon2.hp)
-                }
-            },
-            "weather": battle.weather._weather_type
-        }
-        async with aiohttp.ClientSession() as session:
-            async with session.post('http://localhost:3680/generate-field-image', json=payload) as response:
-                if response.status == 200:
-                    img_data = await response.read()
-                    return img_data
-                else:
-                    print(f"Error: {response.status} - {await response.text()}")
-                    return None
-    except Exception as e:
-        print("g-f-p", e)
