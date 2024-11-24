@@ -37,7 +37,6 @@ def get_sprite_bytes(mon):
         with open(sprite_path, "rb") as f:
             return f.read()
     except FileNotFoundError:
-        print(f"Sprite not found at {sprite_path}, attempting prefix fallback.")
         prefix = normalized_name.split("-")[0]
         sprite_path = f"cogs/pokemonduel/nsprites/{prefix}.png"
         try:
@@ -176,15 +175,15 @@ def get_weather_image(weather):
         print(f"Weather image {weather_map[weather]} not found.")
     return None
 
+def format_pokemon_name(name):
+    return name.lower().replace("_", "-").replace(" ", "-")
 
 def generate_field_image(battle):
     try:
-        def format_pokemon_name(name):
-            return name.lower().replace("_", "-").replace(" ", "-")
         mon1 = battle.trainer1.current_pokemon
         mon2 = battle.trainer2.current_pokemon
-        p1am = [mon._name for mon in battle.trainer1.party if mon.hp > 0]
-        p2am = [mon._name for mon in battle.trainer2.party if mon.hp > 0]
+        p1am = [format_pokemon_name(mon._name) for mon in battle.trainer1.party if mon.hp > 0]
+        p2am = [format_pokemon_name(mon._name) for mon in battle.trainer2.party if mon.hp > 0]
 
         player1 = Player(
             Monster(
@@ -192,7 +191,7 @@ def generate_field_image(battle):
                 max_hp=int(mon1.starting_hp),
                 current_hp=int(mon1.hp),
             ),
-            [format_pokemon_name(mon) for mon in p1am],
+            p1am,
         )
 
         player2 = Player(
@@ -201,7 +200,7 @@ def generate_field_image(battle):
                 max_hp=mon2.starting_hp,
                 current_hp=mon2.hp,
             ),
-            [format_pokemon_name(mon) for mon in p2am],
+            p2am,
         )
 
         field = Field(player1, player2, battle.weather._weather_type)

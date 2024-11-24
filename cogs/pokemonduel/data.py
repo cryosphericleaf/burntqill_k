@@ -7,7 +7,8 @@ from discord.ext import commands
 from pathlib import Path
 import json
 from .buttons import BattlePromptView, PreviewPromptView
-from .FE import generate_field_image
+from .FE import draw_teams, generate_field_image, format_pokemon_name
+from PIL import Image
 
 def bundled_data_path(cog_instance: commands.Cog) -> Path:
     """
@@ -76,7 +77,19 @@ async def find_one(ctx, db, filter):
 async def generate_team_preview(battle):
     """Generates a message for trainers to preview their team."""
     preview_view = PreviewPromptView(battle)
-    await battle.channel.send("Select a lead pokemon:", view=preview_view)
+    battlefield = Image.open(f"cogs/pokemonduel/misc/{battle.bg}.png").convert("RGBA")
+    p1am = [format_pokemon_name(mon._name) for mon in battle.trainer1.party if mon.hp > 0]
+    p2am = [format_pokemon_name(mon._name) for mon in battle.trainer2.party if mon.hp > 0]
+    draw_teams(battlefield, p1am, "l")
+    draw_teams(battlefield, p2am, "r")
+    img_buffer = io.BytesIO()
+    battlefield.save(img_buffer, format="PNG")
+    img_buffer.seek(0)
+
+    e = discord.Embed(title="Team Preview")
+    file = discord.File(img_buffer, filename='field.png')
+    e.set_image(url=f"attachment://{file.filename}")
+    await battle.channel.send(embed=e, file=file,  view=preview_view)
     return preview_view
 
 async def generate_main_battle_message(battle):
