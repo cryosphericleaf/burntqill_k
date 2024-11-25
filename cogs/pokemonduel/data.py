@@ -7,7 +7,7 @@ from discord.ext import commands
 from pathlib import Path
 import json
 from .buttons import BattlePromptView, PreviewPromptView
-from .FE import draw_teams, generate_field_image, format_pokemon_name
+from .FE import draw_teams, generate_field_image
 from PIL import Image
 
 def bundled_data_path(cog_instance: commands.Cog) -> Path:
@@ -78,8 +78,8 @@ async def generate_team_preview(battle):
     """Generates a message for trainers to preview their team."""
     preview_view = PreviewPromptView(battle)
     battlefield = Image.open(f"cogs/pokemonduel/misc/{battle.bg}.png").convert("RGBA")
-    p1am = [format_pokemon_name(mon._name) for mon in battle.trainer1.party if mon.hp > 0]
-    p2am = [format_pokemon_name(mon._name) for mon in battle.trainer2.party if mon.hp > 0]
+    p1am = [mon._name for mon in battle.trainer1.party if mon.hp > 0]
+    p2am = [mon._name for mon in battle.trainer2.party if mon.hp > 0]
     draw_teams(battlefield, p1am, "l")
     draw_teams(battlefield, p2am, "r")
     img_buffer = io.BytesIO()

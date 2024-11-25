@@ -1,59 +1,48 @@
+from __future__ import annotations
+
 from PIL import Image, ImageDraw, ImageFont
 import io
+import traceback
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from .battle import Battle
+    from .pokemon import DuelPokemon
+    from .trainer import Trainer
 
-class Monster:
-    def __init__(self, name, max_hp, current_hp):
-        if max_hp <= 0 or current_hp < 0 or current_hp > max_hp:
-            raise ValueError("Invalid HP values for Monster.")
-        self.name = name
-        self.max_hp = max_hp
-        self.current_hp = current_hp
-
-
-class Player:
-    def __init__(self, current_monster, alive_mons):
-        if not isinstance(alive_mons, list) or not all(
-            isinstance(mon, str) for mon in alive_mons
-        ):
-            raise ValueError("Alive monsters must be a list of strings.")
-        self.current_monster = current_monster
-        self.alive_mons = alive_mons
-
-
-class Field:
-    def __init__(self, player1, player2, weather, terrain):
-        if weather not in {"sun", "h-sun", "rain", "h-rain", "hail", "sandstorm", ""}:
-            raise ValueError("Invalid weather condition.")
-        self.player1 = player1
-        self.player2 = player2
-        self.weather = weather
-        self.terrain = terrain
-
-
-def get_sprite_bytes(mon):
+def get_sprite_image(name: str) -> Image.Image:
     try:
-        normalized_name = mon.name.lower().replace("_", "-").replace(" ", "-")
+        normalized_name = name.lower().replace("_", "-").replace(" ", "-")
         sprite_path = f"cogs/pokemonduel/nsprites/{normalized_name}.png"
-        with open(sprite_path, "rb") as f:
-            return f.read()
+        sprite_img = Image.open(sprite_path)
+        return sprite_img
     except FileNotFoundError:
         prefix = normalized_name.split("-")[0]
         sprite_path = f"cogs/pokemonduel/nsprites/{prefix}.png"
         try:
-            with open(sprite_path, "rb") as f:
-                return f.read()
+            sprite_img = Image.open(sprite_path)
+            return sprite_img
         except FileNotFoundError:
-            print(f"Sprite not found at {sprite_path}, using default fallback.")
+            print(f"Sprite not found at {sprite_path}, using default")
             fallback_path = "cogs/pokemonduel/nsprites/a.png"
-            with open(fallback_path, "rb") as fallback:
-                return fallback.read()
+            return Image.open(fallback_path)
 
-
-def draw_monster(battlefield, monster, position, spec, size):
+def get_misc_image(name: str) -> Image.Image:
     try:
-        sprite_bytes = get_sprite_bytes(monster)
-        sprite_img = Image.open(io.BytesIO(sprite_bytes))
+        image_path = f"cogs/pokemonduel/misc/{name}.png"
+        sprite_img = Image.open(image_path)
+        return sprite_img
+    except FileNotFoundError:
+        print(f"image not found at {image_path}, using default")
+        fallback_path = "cogs/pokemonduel/nsprites/a.png"
+        return Image.open(fallback_path)
+
+def draw_monster(battlefield, monster: DuelPokemon, position, spec, size):
+    try:
+        if monster.substitute == 0:
+            sprite_img = get_sprite_image(monster._name) 
+        else:
+            sprite_img = get_misc_image("substitute").convert("RGBA")
         width, height = sprite_img.size
         aspect_ratio = width / height
         new_width = size
@@ -68,14 +57,13 @@ def draw_monster(battlefield, monster, position, spec, size):
     except Exception as e:
         print(f"Failed to draw monster: {e}")
 
-
-def draw_hp_bar(draw, monster, position, size):
+def draw_hp_bar(draw, monster: DuelPokemon, position, size):
     try:
         hp_bar_height = 24
         bar_padding = 3
         font_size = 16
 
-        percentage = monster.current_hp / monster.max_hp
+        percentage = monster.hp / monster.starting_hp
         bar_length = int(percentage * size)
 
         base_y = position[1]
@@ -94,7 +82,7 @@ def draw_hp_bar(draw, monster, position, size):
             else (232, 199, 14) if percentage < 0.6 else (0, 255, 0)
         )
         draw.rectangle(hp_bar, fill=hp_color)
-        hp_text = f"{monster.current_hp}/{monster.max_hp}"
+        hp_text = f"{monster.hp}/{monster.starting_hp}"
         font = ImageFont.truetype("cogs/pokemonduel/misc/poppinsb.ttf", font_size)
 
         text_bbox = draw.textbbox((0, 0), hp_text, font=font)
@@ -110,33 +98,15 @@ def draw_hp_bar(draw, monster, position, size):
     except Exception as e:
         print(f"Failed to draw HP bar: {e}")
 
-
 SPRITE_WIDTH = 80
 SPRITE_HEIGHT = 60
-
 
 def draw_teams(base_image, indices, direction):
     try:
         width, height = base_image.size
-        x_pos, y_pos = (
-            (width - SPRITE_WIDTH, 0)
-            if direction == "r"
-            else (0, height - SPRITE_HEIGHT)
-        )
-
+        x_pos, y_pos = ((width - SPRITE_WIDTH, 0) if direction == "r" else (0, height - SPRITE_HEIGHT))
         for name in indices:
-            sprite_path = f"cogs/pokemonduel/nsprites/{name}.png"
-            try:
-                sprite_img = Image.open(sprite_path)
-            except FileNotFoundError:
-                prefix = name.split("-")[0]
-                sprite_path = f"cogs/pokemonduel/nsprites/{prefix}.png"
-                try:
-                    sprite_img = Image.open(sprite_path)
-                except FileNotFoundError:
-                    sprite_img = Image.open("cogs/pokemonduel/nsprites/a.png")
-            sprite_img = sprite_img.resize((80, 60), Image.Resampling.NEAREST)
-
+            sprite_img = get_sprite_image(name).resize((80, 60), Image.Resampling.NEAREST)
             base_image.paste(sprite_img, (x_pos, y_pos), sprite_img)
 
             if direction == "r":
@@ -158,7 +128,6 @@ def draw_teams(base_image, indices, direction):
     except Exception as e:
         print(f"Failed to draw teams: {e}")
 
-
 def get_weather_image(weather):
     weather_map = {
         "sun": "cogs/pokemonduel/misc/weather-sunnyday.png",
@@ -176,7 +145,6 @@ def get_weather_image(weather):
         print(f"Weather image {weather_map[weather]} not found.")
     return None
 
-
 def get_terrain_image(terrain):
     terrain_map = {
         "grassy": "cogs/pokemonduel/misc/weather-grassyterrain.png",
@@ -191,64 +159,37 @@ def get_terrain_image(terrain):
         print(f"Weather image {terrain_map[terrain]} not found.")
     return None
 
+def draw_rectangle(image: Image.Image, position: tuple, size: tuple, color: tuple):
+    top_left = position
+    bottom_right = (position[0] + size[0], position[1] + size[1])
+    transparent_layer = Image.new("RGBA", image.size, (0, 0, 0, 0))
+    transparent_draw = ImageDraw.Draw(transparent_layer)
+    transparent_draw.rectangle([top_left, bottom_right], fill=color)
+    return Image.alpha_composite(image, transparent_layer)
 
-def format_pokemon_name(name):
-    return name.lower().replace("_", "-").replace(" ", "-")
-
-
-def generate_field_image(battle):
+def generate_field_image(battle: Battle):
     try:
-        mon1 = battle.trainer1.current_pokemon
-        mon2 = battle.trainer2.current_pokemon
-        p1am = [
-            format_pokemon_name(mon._name)
-            for mon in battle.trainer1.party
-            if mon.hp > 0
-        ]
-        p2am = [
-            format_pokemon_name(mon._name)
-            for mon in battle.trainer2.party
-            if mon.hp > 0
-        ]
-
-        player1 = Player(
-            Monster(
-                name=format_pokemon_name(mon1._name),
-                max_hp=int(mon1.starting_hp),
-                current_hp=int(mon1.hp),
-            ),
-            p1am,
-        )
-
-        player2 = Player(
-            Monster(
-                name=format_pokemon_name(mon2._name),
-                max_hp=mon2.starting_hp,
-                current_hp=mon2.hp,
-            ),
-            p2am,
-        )
-
-        field = Field(
-            player1, player2, battle.weather._weather_type, battle.terrain.item
-        )
+        trainer1: Trainer = battle.trainer1
+        trainer2: Trainer = battle.trainer2
+        mon1 = trainer1.current_pokemon
+        mon2 = trainer2.current_pokemon
+        p1am = [mon._name for mon in trainer1.party if mon.hp > 0]
+        p2am = [mon._name for mon in trainer2.party if mon.hp > 0]
 
         extratext = ""
-        battlefield = Image.open(f"cogs/pokemonduel/misc/{battle.bg}.png").convert(
-            "RGBA"
-        )
+        battlefield = Image.open(f"cogs/pokemonduel/misc/{battle.bg}.png").convert("RGBA")
         draw_obj = ImageDraw.Draw(battlefield)
 
-        if field.terrain:
-            timg = get_terrain_image(field.terrain)
+        if battle.terrain.item:
+            timg = get_terrain_image(battle.terrain.item)
             battlefield = timg
             draw_obj = ImageDraw.Draw(battlefield)
-            extratext += f"- {field.terrain} terrain\n"
-        if field.weather != "":
-            wimg = get_weather_image(field.weather)
+            extratext += f"- {battle.terrain.item} terrain\n"
+        if battle.weather._weather_type != "":
+            wimg = get_weather_image(battle.weather._weather_type)
             battlefield = wimg
             draw_obj = ImageDraw.Draw(battlefield)
-            extratext += f"- {field.weather} weather\n"
+            extratext += f"- {battle.weather._weather_type} weather\n"
 
         if battle.trick_room.active():
             extratext += f"- trick room\n"
@@ -263,14 +204,69 @@ def generate_field_image(battle):
         if extratext != "":
             draw_obj.text((10, 5), extratext, font=font, fill=(0, 0, 0))
 
-        draw_monster(battlefield, field.player1.current_monster, (90, 250), "b", 250)
-        draw_monster(battlefield, field.player2.current_monster, (420, 100), "f", 240)
+        if trainer1.reflect.active():
+            battlefield = draw_rectangle(battlefield, position=(140, 250), size=(230, 140), color=(255, 215, 0, 128))
+        if trainer1.light_screen.active():
+            battlefield = draw_rectangle(battlefield, position=(160, 270), size=(230, 140), color=(231, 84, 128, 128))
 
-        draw_hp_bar(draw_obj, field.player1.current_monster, (110, 220), 200)
-        draw_hp_bar(draw_obj, field.player2.current_monster, (440, 80), 190)
+        if trainer1.sticky_web:
+            webimg = get_misc_image("web").convert("RGBA")
+            battlefield.paste(webimg, (140, 370), webimg)
+        if trainer1.stealth_rock:
+            rockimg = get_misc_image("rock1").convert("RGBA")
+            battlefield.paste(rockimg, (140, 400), rockimg)
+            battlefield.paste(rockimg, (180, 440), rockimg)
+            battlefield.paste(rockimg, (230, 400), rockimg)
+        if trainer1.spikes > 0:
+            spikeimg = get_misc_image("caltrop").convert("RGBA")
+            battlefield.paste(spikeimg, (150, 400), spikeimg)
+            if trainer1.spikes > 1:
+                battlefield.paste(spikeimg, (190, 410), spikeimg)
+                if trainer1.spikes > 2:
+                    battlefield.paste(spikeimg, (240, 400), spikeimg)
 
-        draw_teams(battlefield, field.player1.alive_mons, "l")
-        draw_teams(battlefield, field.player2.alive_mons, "r")
+        if trainer1.toxic_spikes > 0:
+            spikeimg = get_misc_image("poisoncaltrop").convert("RGBA")
+            battlefield.paste(spikeimg, (155, 410), spikeimg)
+            if trainer1.toxic_spikes > 1:
+                battlefield.paste(spikeimg, (185, 400), spikeimg)
+
+        draw_monster(battlefield, mon1, (90, 250), "b", 250)
+
+        draw_monster(battlefield, mon2, (420, 100), "f", 240)
+        if trainer2.reflect.active():
+            battlefield = draw_rectangle(battlefield, position =  (370, 140), size = (210, 120), color = (255, 215, 0, 128))
+        if trainer2.light_screen.active():
+            battlefield = draw_rectangle(battlefield, position = (390, 160), size = (210, 120), color = (231, 84, 128, 128))
+
+        if trainer2.sticky_web:
+            webimg = get_misc_image("web").convert("RGBA")
+            battlefield.paste(webimg, (470, 210), webimg)
+        if trainer2.stealth_rock:
+            rockimg = get_misc_image("rock1").convert("RGBA")
+            battlefield.paste(rockimg, (470, 240), rockimg)
+            battlefield.paste(rockimg, (510, 280), rockimg)
+            battlefield.paste(rockimg, (560, 240), rockimg)
+        if trainer2.spikes > 0:
+            spikeimg = get_misc_image("caltrop").convert("RGBA")
+            battlefield.paste(spikeimg, (480, 240), spikeimg)
+            if trainer2.spikes > 1:
+                battlefield.paste(spikeimg, (520, 250), spikeimg)
+                if trainer2.spikes > 2:
+                    battlefield.paste(spikeimg, (570, 240), spikeimg)
+        if trainer2.toxic_spikes > 0:
+            spikeimg = get_misc_image("poisoncaltrop").convert("RGBA")
+            battlefield.paste(spikeimg, (485, 250), spikeimg)
+            if trainer2.toxic_spikes > 1:
+                battlefield.paste(spikeimg, (515, 240), spikeimg)
+
+        draw_obj = ImageDraw.Draw(battlefield)
+
+        draw_hp_bar(draw_obj, mon1, (110, 220), 200)
+        draw_hp_bar(draw_obj, mon2, (440, 80), 190)
+
+        draw_teams(battlefield, p1am, "l")
+        draw_teams(battlefield, p2am, "r")
 
         img_buffer = io.BytesIO()
         battlefield.save(img_buffer, format="PNG")
@@ -278,4 +274,5 @@ def generate_field_image(battle):
 
         return img_buffer
     except Exception as e:
-        print(e)
+        print("error in FE")
+        print(traceback.format_exc())
