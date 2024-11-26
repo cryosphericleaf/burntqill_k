@@ -253,7 +253,6 @@ class PokemonDuel(commands.Cog):
                 "The bot encountered an unexpected network issue, "
                 "and the duel could not continue. "
                 "Please try again in a few moments.\n"
-                "Note: Do not report this as a bug."
             )
             return None
         except Exception as exc:
@@ -263,8 +262,6 @@ class PokemonDuel(commands.Cog):
             self.bot.dispatch('flamecogs_game_error', battle, exc)
             await battle.channel.send(
                 'A fatal error has occurred, shutting down.\n'
-                'Please have the bot owner copy the error from console '
-                'and post it in the support channel of <https://discord.gg/bYqCjvu>.'
             )
             return None
         else:
@@ -369,12 +366,6 @@ class PokemonDuel(commands.Cog):
         await self.gen_party_embed(ctx, party, embed)
         await ctx.send(embed=embed)
     
-
-    # @party.command(name="list", aliases=["view"])
-    # async def party_list(self, ctx):
-    #     """View the pokemon currently in your party."""
-    #   pass
-
     @staticmethod
     async def gen_party_embed(ctx, party, embed):
         """Adds fields to the provided `embed` that are rendered descriptors of the pokemon in the provided `party`."""
@@ -430,39 +421,6 @@ class PokemonDuel(commands.Cog):
             desc += f"`EVs:`|`{hpev:3d}`|`{atkev:3d}`|`{defev:3d}`|`{spatkev:3d}`|`{spdefev:3d}`|`{speedev:3d}`\n"
             
             embed.add_field(name=title, value=desc, inline=bool(idx % 2))
-
-    # @commands.guild_only()
-    # @commands.group(invoke_without_command=True)
-    # async def pokemonduelset(self, ctx):
-    #     """Config options for pokemon duels."""
-    #     await ctx.send_help()
-    #     cfg = await self.config.guild(ctx.guild).all()
-    #     msg = (
-    #         "Game contained to a thread: {useThreads}\n"
-    #     ).format_map(cfg)
-    #     await ctx.send(f"```py\n{msg}```")
-
-    # @pokemonduelset.command()
-    # async def thread(self, ctx, value: bool=None):
-    #     """
-    #     Set if a thread should be created per-game to contain game messages.
-        
-    #     Defaults to False.
-    #     This value is server specific.
-    #     """
-    #     if value is None:
-    #         v = await self.config.guild(ctx.guild).useThreads()
-    #         if v:
-    #             await ctx.send("The game is currently run in a per-game thread.")
-    #         else:
-    #             await ctx.send("The game is not currently run in a thread.")
-    #     else:
-    #         await self.config.guild(ctx.guild).useThreads.set(value)
-    #         if value:
-    #             await ctx.send("The game will now be run in a per-game thread.")
-    #         else:
-    #             await ctx.send("The game will not be run in a thread.")
-
 
 async def setup(bot: QillBot) -> None:
     await bot.add_cog(PokemonDuel(bot))

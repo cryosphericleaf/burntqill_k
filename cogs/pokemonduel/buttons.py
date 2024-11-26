@@ -2,6 +2,9 @@ import discord
 from discord.ext import commands
 import asyncio
 from .move import Move
+import logging
+
+logging.basicConfig(filename='qill.log', level=logging.ERROR,format='%(asctime)s - %(levelname)s - %(message)s')
 
 # pylint: disable=C0116,W0613,W0221
 BUTTON_TIMEOUT = 60
@@ -38,7 +41,7 @@ class DuelAcceptView(discord.ui.View):
         self.stop()
     
     async def on_error(self, interaction, error, item):
-        await self.ctx.cog.log.error("Exception in a button.", exc_info=error)
+        logging.error(error)
 
 
 class PreviewPromptView(discord.ui.View):
@@ -76,7 +79,7 @@ class PreviewPromptView(discord.ui.View):
         self.battle.trainer2.event.set()
     
     async def on_error(self, interaction, error, item):
-        self.battle.ctx.cog.log.error("Exception in a button.", exc_info=error)
+        print("err in preview prompt view", error)
     
     def stop(self):
         """Override to stop child views when this view is stopped."""
@@ -95,7 +98,7 @@ class LeadView(discord.ui.View):
             self.add_item(LeadButton(poke))
     
     async def on_error(self, interaction, error, item):
-        self.battle.ctx.cog.log.error("Exception in a button.", exc_info=error)
+        logging.error(error)
 
 
 class LeadButton(discord.ui.Button):
@@ -152,7 +155,7 @@ class BattlePromptView(discord.ui.View):
         self.battle.trainer2.event.set()
     
     async def on_error(self, interaction, error, item):
-        print(error)
+        logging.error(error)
     
     def stop(self):
         """Override to stop child views when this view is stopped."""
@@ -209,7 +212,7 @@ class MoveSelectView(discord.ui.View):
         return True
     
     async def on_error(self, interaction, error, item):
-        self.battle.ctx.cog.log.error("Exception in a button.", exc_info=error)
+        print("err in moveselectview", error)
     
     def stop(self):
         """Override to stop child views when this view is stopped."""
@@ -269,7 +272,7 @@ class DuelForfeitView(discord.ui.View):
         return True
     
     async def on_error(self, interaction, error, item):
-        await self.trainer.party[0].held_item.battle.ctx.cog.log.error("Exception in a button.", exc_info=error)
+        logging.error(error)
 
 
 class ForfeitButton(discord.ui.Button):
@@ -321,7 +324,7 @@ class SwapPromptView(discord.ui.View):
         self.battle.trainer2.event.set()
     
     async def on_error(self, interaction, error, item):
-        self.battle.ctx.cog.log.error("Exception in a button.", exc_info=error)
+        print("err in swap prommpt view", error)
     
     def stop(self):
         """Override to stop child views when this view is stopped."""
@@ -344,7 +347,7 @@ class SwapView(discord.ui.View):
             self.add_item(SwapButton(poke, disabled=idx not in swapdata))
     
     async def on_error(self, interaction, error, item):
-        self.battle.ctx.cog.log.error("Exception in a button.", exc_info=error)
+        logging.error(error)
 
 
 class SwapButton(discord.ui.Button):

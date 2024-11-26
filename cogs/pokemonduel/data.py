@@ -7,43 +7,9 @@ from discord.ext import commands
 from pathlib import Path
 import json
 from .buttons import BattlePromptView, PreviewPromptView
-from .FE import draw_teams, generate_field_image
+from .FE import draw_teams, generate_field_image, get_misc_image
 from PIL import Image
-
-def bundled_data_path(cog_instance: commands.Cog) -> Path:
-    """
-    Get the path to the "data" directory bundled with this cog.
-
-    The bundled data folder must be located alongside the ``.py`` file
-    which contains the cog class.
-
-    .. important::
-
-        You should *NEVER* write to this directory.
-
-    Parameters
-    ----------
-    cog_instance
-        An instance of your cog. If calling from a command or method of
-        your cog, this should be ``self``.
-
-    Returns
-    -------
-    pathlib.Path
-        Path object to the bundled data folder.
-
-    Raises
-    ------
-    FileNotFoundError
-        If no bundled data folder exists.
-
-    """
-    bundled_path = Path(inspect.getfile(cog_instance.__class__)).parent / "data"
-
-    if not bundled_path.is_dir():
-        raise FileNotFoundError("No such directory {}".format(bundled_path))
-
-    return bundled_path
+from .temp import bundled_data_path
 
 async def find(ctx, db, filter):
     """Fetch all matching rows from a data file."""
@@ -77,11 +43,11 @@ async def find_one(ctx, db, filter):
 async def generate_team_preview(battle):
     """Generates a message for trainers to preview their team."""
     preview_view = PreviewPromptView(battle)
-    battlefield = Image.open(f"cogs/pokemonduel/misc/{battle.bg}.png").convert("RGBA")
+    battlefield = get_misc_image(bundled_data_path(battle.ctx.cog), battle.bg)
     p1am = [mon._name for mon in battle.trainer1.party if mon.hp > 0]
     p2am = [mon._name for mon in battle.trainer2.party if mon.hp > 0]
-    draw_teams(battlefield, p1am, "l")
-    draw_teams(battlefield, p2am, "r")
+    draw_teams(bundled_data_path(battle.ctx.cog),battlefield, p1am, "l")
+    draw_teams(bundled_data_path(battle.ctx.cog),battlefield, p2am, "r")
     img_buffer = io.BytesIO()
     battlefield.save(img_buffer, format="PNG")
     img_buffer.seek(0)
